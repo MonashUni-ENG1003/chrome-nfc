@@ -6,6 +6,12 @@ var compatibleDevices = [
     thumbnailURL: chrome.runtime.getURL('images/acr122u.png')
   },
   {
+    deviceName: 'ACR1252 USB NFC Reader',
+    productId: 0x223b,
+    vendorId: 0x072f,
+    thumbnailURL: chrome.runtime.getURL('images/acr122u.png')
+  },
+  {
     deviceName: 'SCL3711 Contactless USB Smart Card Reader',
     productId: 0x5591,
     vendorId: 0x04e6,
@@ -129,6 +135,7 @@ function emulateTag(ndefType, ndefValue, callback) {
 function showDeviceInfo() {
   var deviceInfo = null;
   for (var i = 0; i < compatibleDevices.length; i++)
+    console.log(device.productId)
     if (device.productId === compatibleDevices[i].productId && 
         device.vendorId === compatibleDevices[i].vendorId)
       deviceInfo = compatibleDevices[i];
