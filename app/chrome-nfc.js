@@ -63,7 +63,7 @@ function B64_decode(string) {
   for (var i = 0;i < string.length;++i) {
     var c = string.charCodeAt(i);
     if (c < 32 || c > 127 || !B64_inmap[c - 32]) {
-      return [];
+      return[];
     }
     accu <<= 6;
     accu |= B64_inmap[c - 32] - 1;
@@ -542,19 +542,19 @@ NDEF.prototype.parse_RTD = function(type, rtd) {
   }
 };
 NDEF.prototype.parse_MIME = function(mime_type, payload) {
-  return {"type":"MIME", "mime_type":UTIL_BytesToString(mime_type), "payload":UTIL_BytesToString(payload)};
+  return{"type":"MIME", "mime_type":UTIL_BytesToString(mime_type), "payload":UTIL_BytesToString(payload)};
 };
 NDEF.prototype.compose_MIME = function(payload) {
   return new Uint8Array(UTIL_StringToBytes(payload));
 };
 NDEF.prototype.parse_AAR = function(payload) {
-  return {"type":"AAR", "payload":UTIL_BytesToString(payload)};
+  return{"type":"AAR", "payload":UTIL_BytesToString(payload)};
 };
 NDEF.prototype.parse_ExternalType = function(type, payload) {
   if (UTIL_BytesToString(type) == "android.com:pkg") {
     return this.parse_AAR(payload);
   } else {
-    return {"type":type, "payload":UTIL_BytesToString(payload)};
+    return{"type":type, "payload":UTIL_BytesToString(payload)};
   }
 };
 NDEF.prototype.compose_AAR = function(payload) {
@@ -565,7 +565,7 @@ NDEF.prototype.parse_RTD_TEXT = function(rtd_text) {
   var lang_len = rtd_text[0] & 63;
   var lang = rtd_text.subarray(1, 1 + lang_len);
   var text = rtd_text.subarray(1 + lang_len, rtd_text.length);
-  return {"type":"Text", "encoding":utf16 ? "utf16" : "utf8", "lang":UTIL_BytesToString(lang), "text":UTIL_BytesToString(text)};
+  return{"type":"Text", "encoding":utf16 ? "utf16" : "utf8", "lang":UTIL_BytesToString(lang), "text":UTIL_BytesToString(text)};
 };
 NDEF.prototype.compose_RTD_TEXT = function(lang, text) {
   var l = lang.length;
@@ -573,7 +573,7 @@ NDEF.prototype.compose_RTD_TEXT = function(lang, text) {
   return new Uint8Array([l].concat(UTIL_StringToBytes(lang.substring(0, l))).concat(UTIL_StringToBytes(text)));
 };
 NDEF.prototype.parse_RTD_URI = function(rtd_uri) {
-  return {"type":"URI", "uri":this.prepending[rtd_uri[0]] + UTIL_BytesToString(rtd_uri.subarray(1, rtd_uri.length))};
+  return{"type":"URI", "uri":this.prepending[rtd_uri[0]] + UTIL_BytesToString(rtd_uri.subarray(1, rtd_uri.length))};
 };
 NDEF.prototype.compose_RTD_URI = function(uri) {
   var longest = -1;
@@ -587,6 +587,26 @@ NDEF.prototype.compose_RTD_URI = function(uri) {
     }
   }
   return new Uint8Array([longest_i].concat(UTIL_StringToBytes(uri.substring(longest))));
+};
+NDEF.prototype.parseBytes = function(bytes) {
+  var MB = UTIL_BytesToHex(new Uint8Array(bytes.subarray(0, 1)));
+  var ME = UTIL_BytesToHex(new Uint8Array(bytes.subarray(2, 3)));
+  var CF = UTIL_BytesToHex(new Uint8Array(bytes.subarray(3, 4)));
+  var SR = UTIL_BytesToHex(new Uint8Array(bytes.subarray(4, 5)));
+  var IL = UTIL_BytesToHex(new Uint8Array(bytes.subarray(5, 6)));
+  var TNF = UTIL_BytesToHex(new Uint8Array(bytes.subarray(6, 7)));
+  var id = UTIL_BytesToHex(new Uint8Array(bytes.subarray(7, 9)));
+  var payload = UTIL_BytesToString(new Uint8Array(bytes.subarray(9, bytes.length - 2)));
+  console.groupCollapsed("Parsing NDEF Bytes");
+  console.log("MB: " + MB);
+  console.log("ME: " + ME);
+  console.log("SR: " + SR);
+  console.log("IL: " + IL);
+  console.log("TNF: " + TNF);
+  console.log("ID: " + id);
+  console.log("payload: " + payload);
+  console.groupEnd();
+  return payload;
 };
 function NFC() {
   var self = this;
@@ -611,6 +631,13 @@ function NFC() {
       cb(rc, tag_type, tag_id);
     });
   }
+  var APDU_SELECT = new Uint8Array([0, 164, 4, 0, 7, 240, 57, 65, 72, 20, 129, 0, 0]);
+  var CAPABILITY_CONTAINER = new Uint8Array([0, 164, 0, 12, 2, 225, 3]);
+  var READ_CAPABILITY_CONTAINER = new Uint8Array([0, 176, 0, 0, 15]);
+  var READ_CAPABILITY_CONTAINER_RESPONSE = new Uint8Array([0, 15, 32, 0, 59, 0, 52, 4, 6, 225, 4, 0, 50, 0, 0, 144, 0]);
+  var NDEF_SELECT = new Uint8Array([0, 164, 0, 12, 2, 225, 4]);
+  var NDEF_READ_BINARY_NLEN = new Uint8Array([0, 176, 0, 0, 2]);
+  var NDEF_READ_BINARY_GET_NDEF = new Uint8Array([0, 176, 0, 0, 15]);
   var pub = {"findDevices":function(cb) {
     var device = new usbSCL3711;
     window.setTimeout(function() {
@@ -735,6 +762,26 @@ function NFC() {
         cb(rc);
       });
     }, timeout);
+  }, "conversation":function(device, options, callback) {
+    var step = options["step"];
+    if (step === 0) {
+      device.sendCommand(APDU_SELECT, callback, false, step);
+    }
+    if (step === 1) {
+      device.sendCommand(CAPABILITY_CONTAINER, callback, false, step);
+    }
+    if (step === 2) {
+      device.sendCommand(READ_CAPABILITY_CONTAINER, callback, false, step);
+    }
+    if (step === 3) {
+      device.sendCommand(NDEF_SELECT, callback, false.step);
+    }
+    if (step === 4) {
+      device.sendCommand(NDEF_READ_BINARY_NLEN, callback, false, step);
+    }
+    if (step === 5) {
+      device.sendCommand(NDEF_READ_BINARY_GET_NDEF, callback, false, step);
+    }
   }};
   return pub;
 }
@@ -1034,6 +1081,10 @@ usbSCL3711.prototype.read = function(timeout, cb) {
                       var NFCIDLength = f[12];
                       var tag_id = (new Uint8Array(f.subarray(13, 13 + NFCIDLength))).buffer;
                       console.log("DEBUG: tag_id: " + UTIL_BytesToHex(new Uint8Array(tag_id)));
+                      // added storage
+                      var storage_obj = {};
+                      storage_obj["uid"] = UTIL_BytesToHex(new Uint8Array(tag_id));
+                      chrome.storage.local.set(storage_obj,function(){console.log("Saved uid to storage: " + UTIL_BytesToHex(new Uint8Array(tag_id)));});
                       if (f[9] == 0 && f[10] == 68) {
                         console.log("DEBUG: found Mifare Ultralight (106k type A)");
                         self.detected_tag = "Mifare Ultralight";
@@ -1254,7 +1305,8 @@ usbSCL3711.prototype.open = function(which, cb, onclose) {
         }
         self.acr122_set_buzzer(false, function(rc) {
           if (rc) {
-            console.warn("[FIXME] acr122_set_buzzer: rc = " + rc);
+            console.error("[ERROR] acr122_reset_to_good_state() returns " + rc);
+            return callback ? callback(rc) : null;
           }
           if (callback) {
             callback(result);
@@ -1485,6 +1537,35 @@ usbSCL3711.prototype.apdu = function(req, cb, write_only) {
     });
   }
 };
+usbSCL3711.prototype.acr122_get_current_settings = function(cb) {
+  var self = this;
+  var callback = cb;
+  self.exchange((new Uint8Array([107, 5, 0, 0, 0, 0, 0, 0, 0, 0, 255, 0, 0, 0, 2, 212, 2])).buffer, 1, function(rc, data) {
+    if (callback) {
+      callback(rc, data);
+    }
+  });
+};
+usbSCL3711.prototype.sendCommand = function(command, callback, check, step) {
+  var u8 = new Uint8Array(this.makeFrame(64, UTIL_concat([1], command)));
+  for (var i = 0;i < u8.length;i += 64) {
+    this.dev.writeFrame((new Uint8Array(u8.subarray(i, i + 64))).buffer);
+  }
+  this.read(1, function(rc, data, expect_sw12) {
+    var u8 = new Uint8Array(data);
+    var message = "";
+    if (step === 5) {
+      var parseNdefData = new NDEF;
+      message = parseNdefData.parseBytes(u8);
+    }
+    if (u8.length < 2 || u8[u8.length - 2] !== 144 || u8[u8.length - 1] !== 0) {
+      console.log("JDR: something is not right on that return!");
+    } else {
+      callback(UTIL_BytesToHexWithSeparator(u8), u8, message, true);
+      return;
+    }
+  });
+};
 function SHA256() {
   this._buf = new Array(64);
   this._W = new Array(64);
@@ -1653,7 +1734,7 @@ TT2.prototype.read = function(device, cb) {
       return false;
     }
     function readable(cc3) {
-      return (cc3 & 240) == 0 ? true : false;
+      return(cc3 & 240) == 0 ? true : false;
     }
     if (CC0 != 225 || !check_ver(CC1) || !readable(CC3)) {
       console.log("UNsupported type 2 tag: CC0=" + CC0 + ", CC1=" + CC1 + ", CC3=" + CC3);
@@ -1939,7 +2020,7 @@ function UTIL_BytesToHexWithSeparator(b, sep) {
     hexrep[i * stride + stride - 2] = hexchars.charAt(b[i] >> 4 & 15);
     hexrep[i * stride + stride - 1] = hexchars.charAt(b[i] & 15);
   }
-  return (sep ? hexrep.slice(1) : hexrep).join("");
+  return(sep ? hexrep.slice(1) : hexrep).join("");
 }
 function UTIL_HexToBytes(h) {
   var hexchars = "0123456789ABCDEFabcdef";
@@ -1983,7 +2064,7 @@ function UTIL_ltArrays(a, b) {
   return false;
 }
 function UTIL_geArrays(a, b) {
-  return !UTIL_ltArrays(a, b);
+  return!UTIL_ltArrays(a, b);
 }
 function UTIL_getRandom(a) {
   var tmp = new Array(a);

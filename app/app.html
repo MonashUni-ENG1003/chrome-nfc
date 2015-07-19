@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>chrome.nfc ENG1003 Implementation</title>
+  <link href="lib/bootstrap.min.css" rel="stylesheet" type="text/css" />
+  <link href="app.css" rel="stylesheet" type="text/css" />
+</head>
+<body>
+  <div class="wrapper">
+    <div class="page-header">
+      <h1>chrome.nfc API sample</h1>
+    </div>
+
+    <ul class="nav nav-tabs">
+      <li class="active"><a href="#home" data-toggle="tab">Device</a></li>
+      <li class="dropdown">
+        <a href="#" id="myTabDrop1" class="dropdown-toggle" data-toggle="dropdown">Read <b class="caret"></b></a>
+        <ul class="dropdown-menu" role="menu" aria-labelledby="myTabDrop1">
+          <li><a href="#read-ndef" tabindex="-1" data-toggle="tab">Read NDEF Tag</a></li>
+          <li><a href="#read-tags" tabindex="-1" data-toggle="tab">Read/Write ENG1003 URI to Tag</a></li>
+        </ul>
+      </li>
+    </ul>
+    <div class="tab-content">
+      <div class="tab-pane active" id="home">
+        <img id="device-thumbnail" class="hidden"/>
+        <dl id="device-info">
+          <dt>Name</dt>
+          <dd id="device-name"></dd>
+          <dt>Vendor ID</dt>
+          <dd id="device-vendor-id"></dd>
+          <dt>Product ID</dt>
+          <dd id="device-product-id"></dd>
+        </dl>
+      </div>
+      <div class="tab-pane" id="read-ndef">
+        <pre></pre>
+        <button type="button" class="btn btn-default">Run</button>
+      </div>
+      <div class="tab-pane" id="read-tags">
+        <pre></pre>
+        <form role="form">
+          <div class="form-group">
+            <label for="read-tags-no">Enter tag number:</label>
+            <input type="text" class="form-control" id="read-tags-no" value = "1">
+          </div>
+          <div class="form-group">
+              <button type="button" class="btn btn-default">Run</button>
+          </div>
+        </form>
+        <label for "read-tags-data">Tags scanned:</label>
+        <pre id="read-tags-data"></pre>
+      </div>
+    </div>
+  </div>
+
+  <div id="logContainer" class="small">
+    <div class="drawer"></div>
+    <div class="logs"></div>
+  </div>
+  
+  <script src="lib/jquery-2.1.0.min.js"></script>
+  <script src="lib/bootstrap.min.js"></script>
+  <script src="chrome-nfc.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
